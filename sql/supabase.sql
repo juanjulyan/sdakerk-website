@@ -19,3 +19,9 @@ alter table public.churches enable row level security;
 -- Review entries in Table Editor and set status = approved only after checking
 -- the church is a real Afrikaans SDA congregation and contact details may be published.
 -- Do not publish private individuals' phone or email without consent.
+
+-- Update an existing SDAKerk deployment to accept a Google Maps link.
+alter table public.churches add column if not exists google_maps_url text;
+alter table public.churches alter column latitude drop not null;
+alter table public.churches alter column longitude drop not null;
+-- Approve only once an administrator verifies the Google Maps link and maps the coordinates.
