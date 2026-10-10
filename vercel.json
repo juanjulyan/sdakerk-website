@@ -3,22 +3,64 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
-    {"source": "/(.*)", "headers": [
-      {"key": "X-Content-Type-Options", "value": "nosniff"},
-      {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"},
-      {"key": "Permissions-Policy", "value": "geolocation=(self), camera=(), microphone=()"},
-      {"key": "X-Frame-Options", "value": "DENY"}
-    ]}
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "geolocation=(self), camera=(), microphone=()"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
+      ]
+    }
   ],
   "rewrites": [
-    {"source": "/oor-ons", "destination": "/about.html"},
-    {"source": "/bybel", "destination": "/bible.html"},
-    {"source": "/studie", "destination": "/study.html"},
-    {"source": "/boeke", "destination": "/books.html"},
-    {"source": "/videos", "destination": "/videos.html"},
-    {"source": "/gemeentes", "destination": "/churches.html"},
-    {"source": "/kontak", "destination": "/contact.html"},
-    {"source": "/privaatheid", "destination": "/privacy.html"},
-    {"source": "/bepalings", "destination": "/terms.html"}
+    {
+      "source": "/oor-ons",
+      "destination": "/about"
+    },
+    {
+      "source": "/bybel",
+      "destination": "/bible"
+    },
+    {
+      "source": "/studie",
+      "destination": "/study"
+    },
+    {
+      "source": "/boeke",
+      "destination": "/books"
+    },
+    {
+      "source": "/videos",
+      "destination": "/videos"
+    },
+    {
+      "source": "/gemeentes",
+      "destination": "/churches"
+    },
+    {
+      "source": "/kontak",
+      "destination": "/contact"
+    },
+    {
+      "source": "/privaatheid",
+      "destination": "/privacy"
+    },
+    {
+      "source": "/bepalings",
+      "destination": "/terms"
+    }
   ]
 }
