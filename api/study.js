@@ -1,0 +1,2 @@
+const {send}=require('./_shared');
+module.exports=(req,res)=>{if(req.method!=='GET')return send(res,405,{error:'Method not allowed'});const now=new Date(),day=now.getUTCDay(),sat=new Date(now);sat.setUTCDate(now.getUTCDate()-(day+1)%7);return send(res,200,{weekStarts:sat.toISOString().slice(0,10),source:'https://absg.sspmadventist.org/lang/af',message:'Volledige weeklikse les beskikbaar by die amptelike bron.'})};

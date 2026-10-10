@@ -1,0 +1,11 @@
+{
+  "name": "sdakerk-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Afrikaanse Sewendedag-Adventistekerk inligtingswebwerf",
+  "scripts": {
+    "dev": "npx vercel dev",
+    "check": "node --check assets/app.js && node --check api/bible.js && node --check api/videos.js && node --check api/study.js && node --check api/churches.js && node --check api/contact.js"
+  },
+  "engines": {"node": ">=20"}
+}
