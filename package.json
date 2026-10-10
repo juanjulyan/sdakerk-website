@@ -5,7 +5,9 @@
   "description": "Afrikaanse Sewendedag-Adventistekerk inligtingswebwerf",
   "scripts": {
     "dev": "npx vercel dev",
-    "check": "node --check assets/app.js && node --check api/bible.js && node --check api/videos.js && node --check api/study.js && node --check api/churches.js && node --check api/contact.js"
+    "check": "node --check assets/app.js && node --check assets/overhaul.js && node --check assets/reader-v3.mjs && node --check api/bible.js && node --check api/lesson-import.js && node --check api/library.js && node --check api/library-pdf.js && node --check api/videos.js && node --check api/study.js && node --check api/churches.js && node --check api/contact.js"
   },
-  "engines": {"node": ">=20"}
+  "engines": {
+    "node": ">=20"
+  }
 }

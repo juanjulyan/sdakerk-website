@@ -113,3 +113,7 @@ The improved bookshelf displays illustrated book covers and opens an on-site rea
 
 The map starts in the Cape Town area. The user can explicitly grant device location, zoom, reset and navigate. OpenStreetMap embeds provide a fallback when the Leaflet JavaScript CDN is blocked. Pending community submissions never appear automatically.
 
+
+## October 10 update: weekly lesson links and personal PDF bookshelf
+
+See [README-OCT-10-UPDATE.md](README-OCT-10-UPDATE.md) for the new workflow, publication-rights restrictions, Supabase configuration and safe GitHub deployment script.
