@@ -34,31 +34,81 @@ function displayReference(reference){
 }
 const scriptureNames={'Ps.':'Psalms','Prov.':'Proverbs','Isa.':'Isaiah','John':'John','Thess.':'Thessalonians','Tim.':'Timothy','Heb.':'Hebrews','Peter':'Peter','Gen.':'Genesis','Deut.':'Deuteronomy','Matt.':'Matthew','Cor.':'Corinthians','Eph.':'Ephesians','Rev.':'Revelation','Luke':'Luke','Dan.':'Daniel','Rom.':'Romans','Phil.':'Philippians','Col.':'Colossians','Sam.':'Samuel','Acts':'Acts','Chron.':'Chronicles','Exod.':'Exodus','Ezek.':'Ezekiel','Job':'Job','Mark':'Mark','Gal.':'Galatians','Jer.':'Jeremiah','Hab.':'Habakkuk','Titus':'Titus','Mic.':'Micah','Jude':'Jude','Lev.':'Leviticus','Haggai':'Haggai','Mal.':'Malachi','Eccl.':'Ecclesiastes','James':'James','Num.':'Numbers','Amos':'Amos','Joel':'Joel','Zec.':'Zechariah'};
 function beliefReferenceButtons(source){
- let lastBook='',lastChapter='',items=[],seen=new Set();
- for(const chunk of source.split(';')){
-   const part=chunk.trim();if(!part)continue;
-   const match=part.match(/^(?:(\d)\s+)?([A-Za-z.]+)\s+(.+)$/);
-   let portion=part;
-   if(match && scriptureNames[match[2]]){lastBook=(match[1]?match[1]+' ':'')+scriptureNames[match[2]];portion=match[3];lastChapter=''}
-   if(!lastBook)continue;
-   for(const section of portion.split(/,\s*/)){
-     const p=section.trim();if(!p)continue;
-     let chapter='',verses='';
-     if(p.includes(':')){const parts=p.split(':');chapter=parts[0];verses=parts[1];lastChapter=chapter}
-     else if(lastChapter && /^\d+$/.test(p)){chapter=lastChapter;verses=p}
-     else {chapter=p;lastChapter=''}
-     if(!/^\d{1,3}(?:-\d{1,3})?$/.test(chapter)|| (verses&&!/^\d{1,3}(?:-\d{1,3})?$/.test(verses)))continue;
-     // The verse API requires a verse expression. A whole-chapter reference starts at verse 1.
-     const ref=lastBook+' '+chapter+(verses?':'+verses:'');
-     const id=ref.toLowerCase().replace(/\s+/g,' ');
-     if(seen.has(id))continue;seen.add(id);
-     const label=displayReference(ref);
-     items.push('<button type="button" class="ref-link" data-scripture="'+esc(ref)+'" title="'+L('Lees Bybelteks','Read passage')+'">'+esc(label)+' ↗</button>');
-   }
- }
- return items.join('');
-}
+  // Parse the official citation style. Commas continue a verse list;
+  // semicolons begin a new passage, which may omit a repeated book name.
+  let book='', entries=[], order=0;
+  for(const chunk of source.split(';')){
+    const part=chunk.trim();
+    if(!part)continue;
+    const match=part.match(/^(?:(\d)\s+)?([A-Za-z.]+)\s+(.+)$/);
+    let passage=part;
+    if(match && scriptureNames[match[2]]){
+      book=(match[1]?match[1]+' ':'')+scriptureNames[match[2]];
+      passage=match[3];
+    }
+    if(!book)continue;
+    let chapterContext=null;
+    for(const raw of passage.split(/\s*,\s*/)){
+      const token=raw.trim().replace(/[–—]/g,'-');
+      if(!token)continue;
+      const verseMatch=token.match(/^(\d{1,3}):(\d{1,3})(?:-(\d{1,3}))?$/);
+      if(verseMatch){
+        const chapter=Number(verseMatch[1]),from=Number(verseMatch[2]),to=Number(verseMatch[3]||verseMatch[2]);
+        if(chapter<1||from<1||to<from||to>176)continue;
+        chapterContext=chapter;
+        entries.push({book,chapter,from,to,order:order++});
+        continue;
+      }
+      if(chapterContext!==null){
+        const continued=token.match(/^(\d{1,3})(?:-(\d{1,3}))?$/);
+        if(continued){
+          const from=Number(continued[1]),to=Number(continued[2]||continued[1]);
+          if(from>=1&&to>=from&&to<=176)entries.push({book,chapter:chapterContext,from,to,order:order++});
+          continue;
+        }
+      }
+      const chapterMatch=token.match(/^(\d{1,3})(?:-(\d{1,3}))?$/);
+      if(chapterMatch){
+        const chapter=Number(chapterMatch[1]),last=Number(chapterMatch[2]||chapterMatch[1]);
+        if(chapter<1||last<chapter||last>150)continue;
+        entries.push({book,chapter,last,order:order++});
+        chapterContext=null;
+      }
+    }
+  }
 
+  const merged=[];
+  for(const item of entries){
+    if(item.from===undefined){
+      if(!merged.some(x=>x.from===undefined&&x.book===item.book&&x.chapter===item.chapter&&x.last===item.last))merged.push({...item});
+      continue;
+    }
+    const current={...item};
+    // Merge overlapping and consecutive verse ranges in the same chapter;
+    // repeat so transitive runs become a single popup regardless of source order.
+    for(let i=0;i<merged.length;){
+      const prior=merged[i];
+      if(prior.from!==undefined&&prior.book===current.book&&prior.chapter===current.chapter&&prior.from<=current.to+1&&prior.to+1>=current.from){
+        current.from=Math.min(current.from,prior.from);
+        current.to=Math.max(current.to,prior.to);
+        current.order=Math.min(current.order,prior.order);
+        merged.splice(i,1);
+        i=0;
+      }else i++;
+    }
+    merged.push(current);
+  }
+
+  // A full chapter already contains its individual verses. Never repeat them.
+  const complete=merged.filter(x=>x.from===undefined);
+  const displayed=merged.filter(x=>x.from===undefined||!complete.some(c=>c.book===x.book&&x.chapter>=c.chapter&&x.chapter<=c.last)).sort((a,b)=>a.order-b.order);
+  return displayed.map(item=>{
+    const suffix=item.from===undefined?(item.last===item.chapter?String(item.chapter):item.chapter+'-'+item.last):item.chapter+':'+item.from+(item.to>item.from?'-'+item.to:'');
+    const reference=item.book+' '+suffix;
+    const label=displayReference(reference);
+    return '<button type="button" class="ref-link" data-scripture="'+esc(reference)+'" title="'+L('Lees Bybelteks','Read passage')+'">'+esc(label)+' ↗</button>';
+  }).join('');
+}
 function about(){const groups=h.beliefGroups;let n=0;layout(header(L('Ons identiteit','Our identity'),L('Oor die Sewendedag-Adventistekerk','About the Seventh-day Adventist Church'),L('Ontdek ons geskiedenis, sending en 28 Bybelgegronde geloofsoortuigings.','Explore our history, mission and 28 Bible-based fundamental beliefs.'))+`<section class="section section-light"><div class="container narrow longform"><span class="eyebrow">${L('Ons geloof','Our faith')}</span><h2>${L('Jesus Christus staan sentraal.','Jesus Christ is central.')}</h2><p>${L('Sewendedag-Adventiste is Christene wat die Bybel as die grondslag van geloof en praktyk aanvaar. Die naam Adventis verwys na die verwagting van Jesus Christus se wederkoms, terwyl die sewende dag, Saterdag, aan God se Sabbat herinner.','Seventh-day Adventists are Christians who accept the Bible as the foundation of faith and practice. Adventist refers to the expected return of Jesus Christ, while the seventh day, Saturday, recalls God’s Sabbath.')}</p><p>${L('Die beweging het gedurende die negentiende eeu gevorm en in 1863 as ’n georganiseerde kerk ontwikkel. Vandag bestaan dit uit gemeentes regoor die wêreld, met ’n sterk fokus op aanbidding, Bybelonderrig, gesondheidsorg, opvoeding en hulp aan mense in nood.','The movement took shape in the nineteenth century and was organized as a church in 1863. Today it has congregations around the world, emphasizing worship, biblical education, health, schooling and compassionate service.')}</p><p>${L('Die 28 geloofsoortuigings hieronder word in ses studietemas aangebied. Maak enige onderwerp oop vir ’n uitgebreide verduideliking, Bybelverwysings en ’n vraag om verder oor na te dink.','The 28 beliefs are arranged in six study themes. Expand any topic for a fuller explanation, Bible references and a study question.')}</p></div></section><section class="section section-warm"><div class="container"><div class="section-head"><div><span class="eyebrow">${L('Die 28 geloofsoortuigings','28 fundamental beliefs')}</span><h2>${L('Verdiep jou begrip, een onderwerp op ’n slag.','Explore each belief more deeply.')}</h2></div></div>${groups.map(group=>`<div class="belief-section"><h2>${esc(L(group.af,group.en))}</h2><div class="belief-accordion">${group.items.map(([af,en,da,de])=>{let i=n++;const completeRefs=sourceReferenceLists[i];return `<details class="belief-detail"><summary><span>${String(i+1).padStart(2,'0')}</span><strong>${esc(L(af,en))}</strong><span class="expand-mark">+</span></summary><div class="belief-detail-body"><p>${esc(L(da,de))}</p><p class="belief-expanded">${esc(lang()==='af'?detailedBeliefsAf[i]:beliefDetailsEn[i])}</p><p class="belief-expanded">${esc(lang()==='af'?fullerBeliefsAf[i]:beliefContextEn[i])}</p><p>${L('Om hierdie leerstelling te bestudeer, lees die verwante Skrifgedeeltes in hul oorspronklike konteks. Vra hoe die teks aansluit by die breër boodskap van verlossing deur Jesus Christus en hoe dit in die lewe van ’n gelowige gestalte kry.','Study this doctrine by reading the related Scripture passages in their context. Consider how each text connects to salvation through Jesus Christ and practical Christian living.')}</p><h4>${L('Lees in die Bybel','Read in Scripture')}</h4><div class="ref-list">${beliefReferenceButtons(completeRefs)}</div><div class="study-question"><strong>${L('Dink verder','Reflect')}</strong><p>${esc(lang()==='af'?promptsAf[i%4]:promptsEn[i%4])}</p></div></div></details>`}).join('')}</div></div>`).join('')}</div></section>`)}
 const themes=[
  {af:'God roep ons om te luister',en:'God calls us to listen',days:[['Die Woord as lig','Psalm 119:105','Wat verander wanneer die Bybel jou besluite rig?'],['God spreek deur Sy Seun','Hebreërs 1:1-2','Wat openbaar Jesus oor die Vader?'],['’n Bereidwillige hart','Jesaja 6:8','Waarheen kan God jou stuur?'],['Wysheid om te onderskei','Jakobus 1:5','Vir watter besluit het jy vandag wysheid nodig?'],['Die stem van die Herder','Johannes 10:27-28','Hoe onderskei jy Jesus se stem?'],['Doen wat jy hoor','Jakobus 1:22','Watter waarheid wil jy hierdie week uitleef?'],['Getrou in die gemeenskap','Handelinge 2:42','Hoe versterk gemeenskap jou geloof?']]},
