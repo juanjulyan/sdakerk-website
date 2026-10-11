@@ -62,5 +62,12 @@
       "source": "/bepalings",
       "destination": "/terms"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/bestuur-boeke",
+      "destination": "/admin",
+      "permanent": true
+    }
   ]
 }
