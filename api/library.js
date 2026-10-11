@@ -10,6 +10,7 @@ const getJson=async(r)=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw E
 const table=()=>base()+'/rest/v1/sdakerk_books';
 const safe=(v,max)=>String(v||'').trim().slice(0,max);
 module.exports=async(req,res)=>{
+ if(req.method==='GET'&&req.query.action==='verify')return send(res,admin(req)?200:403,{authorized:admin(req)});
  if(req.method==='GET'){
   if(!ready())return send(res,200,{books:[],configured:false});
   try{const r=await fetch(table()+'?select=id,title,lang,published_at&published=eq.true&order=published_at.desc&limit=250',{headers:headers()});return send(res,200,{books:await getJson(r),configured:true})}catch{return send(res,200,{books:[],configured:false})}
