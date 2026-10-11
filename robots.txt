@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://sdakerk.com/sitemap.xml
+Sitemap: https://www.sdakerk.com/sitemap.xml
