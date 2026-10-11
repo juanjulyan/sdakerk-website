@@ -44,8 +44,7 @@ function beliefReferenceButtons(source){
      else {chapter=p;lastChapter=''}
      if(!/^\d{1,3}(?:-\d{1,3})?$/.test(chapter)|| (verses&&!/^\d{1,3}(?:-\d{1,3})?$/.test(verses)))continue;
      // The verse API requires a verse expression. A whole-chapter reference starts at verse 1.
-     const verseRange=verses||'1';
-     const ref=lastBook+' '+chapter+':'+verseRange;
+     const ref=lastBook+' '+chapter+(verses?':'+verses:'');
      const id=ref.toLowerCase().replace(/\s+/g,' ');
      if(seen.has(id))continue;seen.add(id);
      const label=lastBook+' '+chapter+(verses?':'+verses:'');
