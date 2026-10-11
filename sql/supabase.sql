@@ -25,3 +25,17 @@ alter table public.churches add column if not exists google_maps_url text;
 alter table public.churches alter column latitude drop not null;
 alter table public.churches alter column longitude drop not null;
 -- Approve only once an administrator verifies the Google Maps link and maps the coordinates.
+
+-- October 2026: primary congregation language and public church website.
+alter table public.churches add column if not exists primary_language text not null default 'Afrikaans';
+alter table public.churches add column if not exists church_website text;
+alter table public.churches drop constraint if exists churches_primary_language_check;
+alter table public.churches add constraint churches_primary_language_check check (primary_language in ('Afrikaans','English','Xhosa','Zulu','Other'));
+-- Publicly viewable selected Sabbath School week (writes only through authenticated Vercel API).
+create table if not exists public.sdakerk_settings (
+  key text primary key,
+  value text not null,
+  updated_at timestamptz not null default now()
+);
+alter table public.sdakerk_settings enable row level security;
+-- No anon/authenticated policies. Server-side service-role access only.
